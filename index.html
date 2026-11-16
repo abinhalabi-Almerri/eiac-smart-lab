@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>EIAC Interactive Lab</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="EIAC Lab">
+<meta name="theme-color" content="#071630">
+<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>EIAC Interactive Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=Reem+Kufi:wght@500;700&display=swap">
+<style>
+/* Layout: one exhibition screen. A 16:9 lab image with pulsing hotspots, a slide-in detail panel, and reviewer notes underneath. A deliberately dark single theme, built for a booth screen. */
+:root{
+  --navy:#0b2350; --night:#071630; --panel:#0e2a5c; --bronze:#c8a36a; --bronze-d:#8c724a;
+  --red:#d7213b; --ink:#f3efe6; --mute:#a9b4c9; --line:rgba(200,163,106,.28); --ok:#3fbf8a;
+  --f-body:"IBM Plex Sans Arabic",system-ui,"Segoe UI",Tahoma,sans-serif;
+  --f-disp:"Reem Kufi","IBM Plex Sans Arabic",system-ui,sans-serif;
+  color-scheme:dark;
+}
+html,body{background:var(--night);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.6;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+.wrap{max-width:1400px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px;min-width:0}
+.brand img{height:40px;width:auto}
+.brand h1{font-family:var(--f-disp);font-weight:700;font-size:clamp(18px,2.4vw,26px);margin:0;text-wrap:balance}
+.brand p{margin:0;color:var(--mute);font-size:13px}
+.tools{display:flex;gap:8px;align-items:center}
+.chip{font-size:12px;letter-spacing:.04em;padding:4px 10px;border:1px solid var(--line);border-radius:999px;color:var(--bronze)}
+button{font:inherit;color:inherit;cursor:pointer}
+.lang{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 14px;font-weight:700}
+.lang:focus-visible,.hs:focus-visible,.close:focus-visible,.tab:focus-visible{outline:2px solid var(--bronze);outline-offset:3px}
+
+.stage{position:relative;width:100%;aspect-ratio:2688/1520;max-width:100%;border-radius:10px;overflow:hidden;background:#000}
+.stage>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}
+.stage .lang{position:absolute;top:2%;inset-inline-end:1.5%;z-index:2;background:rgba(7,22,48,.55);font-size:12px;padding:4px 10px}
+.wrap{max-width:none}
+body{padding-block:8px}
+.hs{position:absolute;transform:translate(-50%,-50%);background:none;border:0;padding:0;display:flex;flex-direction:column;align-items:center;gap:6px}
+.dot{width:clamp(18px,2.2vw,34px);aspect-ratio:1;border-radius:50%;background:var(--bronze);border:3px solid #fff;box-shadow:0 0 0 0 rgba(200,163,106,.7);animation:pulse 2s infinite;display:grid;place-items:center;color:var(--night);font-weight:700;font-size:clamp(9px,1vw,14px)}
+.hs.seen .dot{background:var(--ok)}
+@keyframes pulse{70%{box-shadow:0 0 0 clamp(10px,1.6vw,22px) rgba(200,163,106,0)}100%{box-shadow:0 0 0 0 rgba(200,163,106,0)}}
+.tag{background:rgba(7,22,48,.82);backdrop-filter:blur(4px);border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:clamp(9px,1vw,13px);font-weight:500;white-space:nowrap}
+.hs:hover .tag{background:var(--bronze);color:var(--night)}
+.hint{position:absolute;bottom:3%;left:50%;transform:translateX(-50%);background:rgba(7,22,48,.8);border:1px solid var(--line);border-radius:999px;padding:4px 14px;font-size:clamp(10px,1.1vw,14px);white-space:nowrap}
+
+.panel{position:fixed;inset:0;background:rgba(3,10,24,.72);display:flex;justify-content:flex-end;z-index:20}
+[dir=ltr] .panel{justify-content:flex-end}
+.sheet{width:min(560px,100%);height:100%;overflow-y:auto;background:var(--navy);border-inline-start:1px solid var(--line);padding:calc(20px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) 32px max(20px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px;animation:slide .35s ease}
+@keyframes slide{from{transform:translateX(30px);opacity:0}}
+.sheet-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.sheet h2{font-family:var(--f-disp);font-size:24px;margin:0;line-height:1.3;text-wrap:balance}
+.sub{color:var(--bronze);font-size:13px;margin:2px 0 0}
+.close{background:var(--panel);border:1px solid var(--line);border-radius:8px;width:36px;height:36px;flex:none;font-size:18px}
+video{width:100%;border-radius:10px;background:#000;max-height:60vh}
+.tabs{display:flex;gap:6px}
+.tab{background:none;border:1px solid var(--line);border-radius:6px;padding:4px 12px;font-size:13px}
+.tab[aria-pressed=true]{background:var(--bronze);color:var(--night);font-weight:700}
+.sec h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--bronze);margin:0 0 6px;font-weight:700}
+.sec p,.sec li{margin:0;color:var(--ink)}
+.sec ol,.sec ul{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:4px}
+.ref{display:flex;flex-wrap:wrap;gap:6px}
+.ref span{font-size:12px;padding:3px 9px;border-radius:5px;background:rgba(200,163,106,.14);border:1px solid var(--line);font-variant-numeric:tabular-nums}
+.limit{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:rgba(255,255,255,.03)}
+.limit small{display:block;color:var(--mute);font-size:12px;margin-top:4px}
+.beats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.beat{background:var(--panel);border-radius:8px;padding:8px 6px;font-size:11.5px;line-height:1.4;min-width:0}
+.beat b{display:block;color:var(--bronze);font-size:11px;font-variant-numeric:tabular-nums}
+.pp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pp span{display:flex;align-items:center;gap:6px;background:rgba(80,200,230,.12);border:1px solid rgba(80,200,230,.35);border-radius:999px;padding:3px 10px 3px 4px;font-size:.8em}
+.pp b{display:grid;place-items:center;width:1.6em;height:1.6em;border-radius:50%;background:#50c8e6;color:var(--night);font-size:.85em}
+.ppv{color:var(--ok);font-size:.85em;margin-top:6px!important}
+.draft{font-size:12px;color:var(--mute);border-top:1px solid var(--line);padding-top:10px}
+
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.note{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:rgba(14,42,92,.45);min-width:0}
+.note h3{font-family:var(--f-disp);font-size:17px;margin:0 0 6px}
+.note p,.note li{color:var(--mute);margin:0}
+.note ul{margin:0;padding-inline-start:18px}
+@media (max-width:640px){.tag{display:none}.beats{grid-template-columns:repeat(2,minmax(0,1fr))}.hint{display:none}}
+@media (prefers-reduced-motion:reduce){.stage>img,.dot,.sheet{animation:none}}
+</style>
+<style>
+/* Full-screen mode: the image fills any TV (16:9) completely. On a phone held upright, the whole screen turns sideways so it looks the same as on the TV. */
+[hidden]{display:none!important}
+html,body{height:100%;margin:0;padding:0!important;overflow:hidden;background:#000}
+#app{position:fixed;inset:0;container-type:size;display:grid;place-items:center;background:#000;overflow:hidden}
+@media (orientation:portrait){#app{inset:auto;top:0;left:0;width:100vh;height:100vw;width:100dvh;height:100dvw;transform:rotate(90deg) translateY(-100%);transform-origin:top left}}
+.stage{flex:none;max-width:none;max-height:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(100cqw,calc(100cqh * 2688 / 1520));height:min(100cqh,calc(100cqw * 1520 / 2688));aspect-ratio:auto;border-radius:0;container-type:size}
+/* no automatic playback: the presenter moves between stations by hand */
+#tour,#sTour{display:none}
+#toast{position:absolute;left:50%;top:9%;transform:translateX(-50%);z-index:20;max-width:80%;background:rgba(7,22,48,.92);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:.6em 1em;font-size:max(13px,2cqh);text-align:center}
+.steps3 li{line-height:1.25}
+.slide .right{overflow:hidden}
+.dot{width:clamp(14px,2.1cqw,96px);border-width:max(2px,.22cqw);font-size:max(9px,.9cqw)}
+.ctl{position:absolute;top:2%;inset-inline-end:1.5%;z-index:2;display:flex;gap:.6em;font-size:max(11px,1.4cqh)}
+.ctl button{background:rgba(7,22,48,.5);border:1px solid var(--line);border-radius:.5em;padding:.25em .7em;font-weight:700;color:var(--ink)}
+.panel{position:absolute;inset:0}
+.sheet{width:max(300px,44cqw);height:100%;font-size:clamp(13px,2.2cqh,46px);padding:1.4em 1.4em 2em;gap:1em}
+.sheet h2{font-size:1.6em}.sub{font-size:.85em}.close{width:2.3em;height:2.3em;font-size:1em}
+.sec h3{font-size:.78em}.ref span,.tab{font-size:.82em}.limit small,.draft{font-size:.78em}
+.beat{font-size:.74em}.beat b{font-size:.9em}
+video{max-height:58cqh}
+/* Wall screen: shows the family still; on tap the camera zooms in, the screen straightens and fills the page, then the film plays */
+.stage>img.bg{transition:filter 1.2s}
+.stage.zoom>img.bg{filter:blur(3px) brightness(.6)}
+/* the family still is a real 16:9 picture, projected in perspective onto the wall screen's four corners (computed in script) */
+.stage>img.wall{position:absolute;inset:auto;left:0;top:0;width:1600px;height:900px;max-width:none;object-fit:cover;transform-origin:0 0;cursor:pointer;z-index:1;filter:brightness(.92);opacity:0;transition:opacity .5s}
+.stage.zoom>img.wall{opacity:1}
+/* the dark wall screen shows only a large pulsing play button */
+.hs.big .dot{width:clamp(30px,3.6cqw,150px);font-size:max(14px,1.5cqw);background:rgba(200,163,106,.95)}
+.stage .hs{transition:opacity .3s;z-index:2}
+.stage.zoom .hs,.stage.zoom .ctl{opacity:0;pointer-events:none}
+.stage .film{position:absolute;inset:0;width:100%;height:100%;max-height:none;object-fit:contain;background:#000;border-radius:0;z-index:3}
+.filmx{position:absolute;top:2.5%;right:1.5%;z-index:4;width:max(36px,3.4cqw);height:max(36px,3.4cqw);border-radius:50%;
+  background:rgba(7,22,48,.6);border:1px solid var(--line);color:var(--ink);font-size:max(14px,1.4cqw)}
+/* Presenter slides: tap a capsule, the camera pushes in, a full-screen slide is read from 3 m away */
+.stage>img.bg.push{transition:transform .7s cubic-bezier(.6,0,.2,1),filter .7s}
+.stage.dim>img.bg{filter:blur(6px) brightness(.45)}
+.stage.dim .hs,.stage.dim .ctl,.stage.dim .wall{opacity:0;pointer-events:none;transition:opacity .3s}
+.slide{position:absolute;inset:0;z-index:5;display:grid;grid-template-rows:auto 1fr auto auto;gap:2.2cqh;padding:4cqh 4cqw 3cqh;
+  font-size:2.3cqh;color:var(--ink);animation:fadein .45s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(1.5cqh)}}
+.slide header{display:block}
+.slide .eyebrow{font-size:.8em;letter-spacing:.14em;text-transform:uppercase;color:var(--bronze);font-weight:700}
+.slide h2{font-family:var(--f-disp);font-size:3.2em;line-height:1.05;margin:.1em 0 .15em}
+.slide .key{font-size:1.45em;line-height:1.3;max-width:60ch;margin:0;color:#e9e3d6}
+.slide .body{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:3cqw;min-height:0}
+.slide .media{border-radius:1.4cqh;overflow:hidden;background:#000;min-height:0;border:1px solid var(--line)}
+.slide .media img{width:100%;height:100%;object-fit:cover;display:block}
+.slide .media.tall img{object-fit:contain}
+.slide .right{display:flex;flex-direction:column;gap:1.6cqh;min-height:0}
+.steps3{display:flex;flex-direction:column;gap:1.2cqh;margin:0;padding:0;list-style:none}
+.steps3 li{display:flex;align-items:center;gap:1em;background:rgba(14,42,92,.75);border:1px solid var(--line);border-radius:1.2cqh;padding:1.1cqh 1.2em;font-size:1.25em;font-weight:500}
+.steps3 b{flex:none;display:grid;place-items:center;width:2em;height:2em;border-radius:50%;background:var(--bronze);color:var(--night);font-size:.9em}
+.result{background:rgba(63,191,138,.14);border:1px solid rgba(63,191,138,.55);border-radius:1.2cqh;padding:1.2cqh 1.2em;font-size:1.2em;font-weight:700;color:#bff0d9;display:flex;flex-direction:column;gap:.3em}
+.chips{display:flex;flex-wrap:wrap;gap:.5em}
+.chips span{font-size:.85em;padding:.3em .8em;border-radius:.4em;border:1px solid var(--line);background:rgba(200,163,106,.14);color:var(--bronze);font-weight:700}
+.slide .pp{font-size:1em}
+.slide .pp span{font-size:.85em}
+.slide .play{align-self:flex-start;font-size:1.3em;font-weight:700;background:var(--bronze);color:var(--night);border:0;border-radius:999px;padding:.6em 1.4em}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:1em}
+.bar .grp{display:flex;gap:.6em;align-items:center}
+.bar button{background:rgba(7,22,48,.75);border:1px solid var(--line);border-radius:999px;padding:.45em 1.1em;font-size:.95em;font-weight:700;color:var(--ink)}
+.bar button.on{background:var(--bronze);color:var(--night)}
+.bar .count{color:var(--mute);font-size:.9em;font-variant-numeric:tabular-nums}
+.panel{z-index:10}
+/* hotspots: a small transparent EIAC hologram that floats up and down */
+.holo{display:block;box-sizing:border-box;width:clamp(64px,7.6cqw,210px);aspect-ratio:2.4;padding:5% 8%;border-radius:.5em;
+  background:linear-gradient(180deg,rgba(14,60,110,.62),rgba(7,30,60,.42));border:1.5px solid rgba(160,235,255,.9);
+  box-shadow:0 0 14px rgba(80,200,230,.55),inset 0 0 10px rgba(127,227,255,.3);backdrop-filter:blur(2px);
+  animation:bob 1.8s ease-in-out infinite,glow 1.8s ease-in-out infinite}
+.holo img{display:block;width:100%;height:100%;object-fit:contain;opacity:1;filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 6px rgba(127,227,255,.95))}
+.hs.seen .holo{opacity:.85}
+.hs:hover .holo,.hs:focus-visible .holo{border-color:#fff;box-shadow:0 0 22px rgba(127,227,255,.9)}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-24%)}}
+@keyframes glow{0%,100%{box-shadow:0 0 10px rgba(80,200,230,.45),inset 0 0 8px rgba(127,227,255,.25)}50%{box-shadow:0 0 22px rgba(80,200,230,.85),inset 0 0 12px rgba(127,227,255,.45)}}
+@media (prefers-reduced-motion:reduce){.holo{animation:none}}
+/* phones: the stage is short, so text is sized for reading in the hand and the slide scrolls if needed */
+@container (max-height:520px){
+  .slide{font-size:max(12.5px,3.4cqh);gap:2cqh;padding:3cqh 3cqw 2.5cqh;grid-template-rows:auto auto auto auto;overflow-y:auto;align-content:start}
+  .slide h2{font-size:1.9em}
+  .slide .key{font-size:1.1em}
+  .slide .body{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:2.5cqw}
+  .slide .media{max-height:62cqh;align-self:start}
+  .steps3{gap:1cqh}.steps3 li{font-size:1em;padding:.9cqh .8em}
+  .result{font-size:1em}
+  .slide .pp{display:none}
+  .bar button{padding:.5em .9em}
+  .sheet{width:min(100%,70cqw);font-size:13px}
+  .dot{width:clamp(18px,2.8cqw,30px)}
+}
+</style>
+
+<style>
+/* one look for everything: navy glass panels, hologram cyan for interaction and data, EIAC bronze for headings and numbers */
+:root{--holo:#7fe3ff;--holo-line:rgba(127,227,255,.45);--holo-fill:rgba(80,200,230,.08);--glass:rgba(3,14,34,.6)}
+.hs.big{display:none}
+.filmloop{position:absolute;z-index:4;top:calc(var(--vt,0px) + 2.5%);left:calc(var(--vl,0px) + 1.5% + max(36px,3.4cqw) + 12px);height:max(36px,3.4cqw);
+  padding:0 1.1em;border-radius:999px;background:rgba(7,22,48,.72);border:1px solid rgba(80,200,230,.5);color:var(--ink);font-weight:700;font-size:max(13px,1.2cqw)}
+.filmloop.on{background:rgba(80,200,230,.28);border-color:var(--holo);box-shadow:0 0 12px rgba(80,200,230,.5)}
+/* TVs and wide screens (16:9 or wider, e.g. a TV browser with its bars): fill the whole screen; only ceiling and floor are trimmed.
+   Narrower screens (3:2 laptops, iPads) keep the whole lab with the soft blurred bands. */
+@container (min-aspect-ratio: 17/10){.stage{width:max(100cqw,calc(100cqh * 2688 / 1520));height:max(100cqh,calc(100cqw * 1520 / 2688))}}
+#app::before{content:"";position:absolute;inset:-60px;background:#071630 url(lab.jpg) center/cover no-repeat;filter:blur(26px) brightness(.8) saturate(1.1);z-index:0}
+#app>.stage{z-index:1}
+.stage{box-shadow:0 0 60px 30px rgba(7,22,48,.35)}
+/* overlays use only the visible part of the picture (--vl/--vt = how much is cropped on each side) */
+.slide,.stage .film{inset:var(--vt,0px) var(--vl,0px)}
+.stage .film{width:calc(100% - 2 * var(--vl,0px));height:calc(100% - 2 * var(--vt,0px))}
+.filmx{top:calc(var(--vt,0px) + 2.5%);right:auto;left:calc(var(--vl,0px) + 1.5%)}
+.ctl{top:calc(var(--vt,0px) + 2%);inset-inline-end:calc(var(--vl,0px) + 1.5%)}
+/* wall TV idle screen: the EIAC logo drawn on the screen itself, in the screen's own perspective */
+.tvidle{position:absolute;left:0;top:0;width:1600px;height:900px;transform-origin:0 0;z-index:1;cursor:pointer;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:70px;transition:opacity .5s;
+  background:radial-gradient(ellipse at 50% 45%,rgba(22,66,120,.9),rgba(4,12,28,.97) 72%)}
+.tvidle::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(180deg,rgba(255,255,255,.035) 0 2px,transparent 2px 7px)}
+.tvidle img{width:900px;max-width:none;height:auto;animation:breathe 3.2s ease-in-out infinite}
+.tvsweep{position:absolute;top:-20%;bottom:-20%;left:-320px;width:260px;transform:skewX(-18deg);
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.3),transparent);animation:sweep 4.5s ease-in-out infinite}
+.tvcap{font:700 118px "IBM Plex Sans Arabic",system-ui,sans-serif;letter-spacing:.06em;color:#e9f6ff;animation:capPulse 2.2s ease-in-out infinite}
+.tvcap span{color:var(--holo)}
+.tvidle:focus-visible{outline:8px solid var(--holo)}
+.stage.zoom .tvidle,.stage.dim .tvidle{opacity:0;pointer-events:none}
+@keyframes breathe{0%,100%{opacity:.8;filter:drop-shadow(0 0 16px rgba(127,227,255,.4))}50%{opacity:1;filter:drop-shadow(0 0 48px rgba(127,227,255,.95))}}
+@keyframes sweep{0%,55%{left:-320px}100%{left:1720px}}
+@keyframes capPulse{0%,100%{opacity:.55}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.tvidle img,.tvsweep,.tvcap{animation:none}}
+.slide{background:linear-gradient(180deg,rgba(3,14,34,.62),rgba(3,14,34,.42))}
+.slide .media{border-color:var(--holo-line);box-shadow:0 0 18px rgba(80,200,230,.18)}
+.steps3 li{background:var(--holo-fill);border-color:var(--holo-line);backdrop-filter:blur(3px)}
+.steps3 b{background:var(--bronze)}
+.result{background:rgba(63,191,138,.12)}
+.chips span{border-color:rgba(200,163,106,.5);background:rgba(200,163,106,.1)}
+.bar button,.ctl button,.close{background:rgba(7,22,48,.72);border:1px solid rgba(80,200,230,.5);color:var(--ink)}
+.bar button:hover,.ctl button:hover,.close:hover{border-color:var(--holo);box-shadow:0 0 10px rgba(80,200,230,.45)}
+.bar .count{color:#9fb6cf}
+.sheet{background:rgba(3,14,34,.94);border-inline-start:1px solid var(--holo-line)}
+.sec h3{color:var(--bronze)}
+.ref span{border-color:rgba(200,163,106,.5);background:rgba(200,163,106,.1)}
+.limit{border-color:var(--holo-line);background:var(--holo-fill)}
+.slide .play{background:rgba(7,22,48,.72);color:var(--ink);border:1px solid var(--holo);box-shadow:0 0 14px rgba(80,200,230,.45)}
+#toast{border-color:var(--holo-line)}
+</style>
+<div id="app">
+  <div class="stage" id="stage">
+    <img class="bg" src="lab.jpg" alt="">
+    <img class="wall" id="wall" src="family.jpg" alt="Play the film">
+    <div class="tvidle" id="tvidle" role="button" tabindex="0" aria-label="Meet Hamdan: play the film"><div class="tvsweep"></div><img src="logo-white.svg" alt=""><div class="tvcap">Meet Hamdan <span>▶</span></div></div>
+    <video class="film" id="film" src="film-en.mp4" poster="family.jpg" playsinline preload="auto" hidden></video>
+    <button class="filmx" id="filmx" aria-label="Back to the lab" hidden>✕</button>
+    <button class="filmloop" id="filmloop" hidden>⟳ Repeat: Off</button>
+    <div class="ctl"><button id="tour" aria-label="Start guided tour">▶ Tour</button><button id="loopBtn" aria-label="Play the film on repeat">⟳ Film on repeat</button><button id="fs" aria-label="full screen">⛶</button></div>
+    <section class="slide" id="slide" hidden aria-live="polite"></section>
+  </div>
+  <div class="panel" id="panel" hidden><aside class="sheet" id="sheet" role="dialog" aria-modal="true"></aside></div>
+</div>
+
+<script>
+const UI={
+ ar:{title:"المختبر التفاعلي لسلامة الغذاء",subtitle:"مركز الإمارات العالمي للاعتماد · من المزرعة إلى المائدة",proto:"نموذج للمراجعة",hint:"اضغط على أي منتج لتشاهد رحلته والفحص",
+  journey:"رحلة المنتج",equip:"الأجهزة في المختبر",steps:"خطوات الفحص",ensures:"ماذا يضمن الفحص",refs:"المرجع العالمي",limit:"الحد المسموح (مرجعي)",limitNote:"حدود الاتحاد الأوروبي/الكودكس كمرجع؛ تُطابق مع اللوائح الإماراتية والخليجية بمراجعة أخصائي قبل النشر.",beats:"مخطط الفيديو (٤٥–٦٠ ثانية)",draft:"محتوى علمي مبدئي للمراجعة · الفيديو قيد الإنتاج",
+  n1h:"ما هذا النموذج؟",n1:"معاينة للشاشة التفاعلية في المعرض. الصورة النهائية جاهزة، وفيديو حمدان حقيقي. بقية المنتجات تعرض المحتوى العلمي ومخطط الفيديو الذي سيُنتج بعد الاعتماد.",
+  n2h:"المطلوب منكم",n2:"راجعوا الفكرة والصورة واختيار العينات ودقة الخطوات. اكتبوا ملاحظاتكم بالتعليقات على هذه الصفحة.",
+  n3h:"الخطوة التالية",n3:"بعد الاعتماد: إنتاج فيديو الدجاج كنموذج أول، ثم بقية الفحوصات. المحتوى العلمي يراجعه أخصائي مختبرات معتمد."},
+ en:{title:"Interactive Food Safety Lab",subtitle:"Emirates International Accreditation Centre · Farm to Fork",proto:"Review prototype",hint:"Tap any product to see its journey and test",
+  journey:"Product journey",equip:"Lab equipment",steps:"Test steps",ensures:"What the test assures",refs:"International reference",limit:"Limit (reference)",limitNote:"EU/Codex limits shown as reference; to be matched to UAE/GCC regulations by an expert before release.",beats:"Video storyboard (45–60 s)",draft:"Draft scientific content for review · video in production",
+  n1h:"What is this?",n1:"A preview of the exhibition touch screen. The final lab image is ready and the Hamdan video is real. The other products show the scientific content and the storyboard of the video to be produced after approval.",
+  n2h:"What we need from you",n2:"Review the concept, the image, the choice of samples and the accuracy of the steps. Leave your notes as comments on this page.",
+  n3h:"Next step",n3:"After approval: produce the chicken video as the pilot, then the remaining tests. Scientific content will be checked by an accredited lab specialist."}
+};
+const PP={chicken:["Poultry farm","Halal slaughterhouse","Sample sealed & logged","Accredited lab test","Verified result"],
+ produce:["Farm / import","Port & Al Aweer market","Sample sealed & logged","Accredited lab test","Verified result"],
+ dates:["Palm farm / import","Store & market","Sample sealed & logged","Accredited lab test","Verified result"],
+ fish:["Fishing vessel / import","Fish market","Sample sealed & logged","Accredited lab test","Verified result"],
+ water:["Farm well / supply","Sterile sampling","Sample sealed & logged","Accredited lab test","Verified result"],
+ trust:["Sample logged","Calibrated instruments","Validated method","QC & proficiency checked","Result shared, trusted worldwide"]};
+const BEATS={ar:["زووم من المختبر إلى المنتج","المصدر: المزرعة أو السوق","خطوات الفحص الحقيقية","النتيجة مقابل الحد ✓","ختم 17025 وقبول عالمي"],en:["Zoom from lab to product","Source: farm or market","Real test steps","Result vs limit ✓","17025 seal, accepted worldwide"]};
+const HS=[
+ {id:"hamdan",x:7.6,y:19.4,video:true,
+  ar:{t:"حمدان: مرحباً بكم",s:"افتتاحية ونبذة عن مركز الإمارات العالمي للاعتماد",p:"حمدان، المساعد الرقمي للمركز، يرحب بالزوار ويعرّفهم بدور الاعتماد في سلامة الغذاء من المزرعة إلى المائدة."},
+  en:{t:"Hamdan: Welcome",s:"Opening and introduction to EIAC",p:"Hamdan, EIAC's digital assistant, welcomes visitors and introduces the role of accreditation in food safety from farm to fork."}},
+ {id:"chicken",x:21,y:49.5,
+  ar:{t:"الدجاج",s:"السالمونيلا + التحقق من الحلال",j:"من مزارع الدواجن والمسالخ المعتمدة، تُسحب العينة من خط الإنتاج أو السوق وتُنقل مبرّدة إلى المختبر.",e:["كابينة سلامة حيوية Class II","حاضنات 37 و41.5 °م","خلاط Stomacher","أطباق آجار XLD","جهاز Real-time PCR"],
+   st:["٢٥ غم عينة في ٢٢٥ مل ماء ببتون منظّم (BPW)، تحضين ١٨ ساعة على ٣٤–٣٨ °م","إثراء انتقائي: RVS على ٤١٫٥ °م وMKTTn على ٣٤–٣٨ °م لمدة ٢٤ ساعة","زراعة على آجار XLD؛ مستعمرات السالمونيلا بمركز أسود","تأكيد كيميائي حيوي ومصلي، أو PCR سريع مصدّق","الحلال: استخلاص DNA ثم PCR بمجسات خاصة بالخنزير مع ضوابط"],
+   en2:"أن الدجاج خالٍ من السالمونيلا، وأن المنتج الحلال خالٍ من أي أثر لـ DNA الخنزير.",r:["ISO 6579-1:2017/Amd 1:2020","ISO 16140 (طرق سريعة)","Real-time PCR"],l:"السالمونيلا: غير موجودة في ٢٥ غم · DNA الخنزير: غير مكتشف (حساسية تصل ٠٫٠٠٠٥٪)"},
+  en:{t:"Chicken",s:"Salmonella + halal verification",j:"From accredited poultry farms and slaughterhouses, a sample is taken from the line or the market and transported chilled to the lab.",e:["Class II biosafety cabinet","Incubators at 37 and 41.5 °C","Stomacher blender","XLD agar plates","Real-time PCR"],
+   st:["25 g sample in 225 mL buffered peptone water, 18 h at 34–38 °C","Selective enrichment: RVS at 41.5 °C and MKTTn at 34–38 °C for 24 h","Plate on XLD agar; Salmonella colonies show black centres","Biochemical and serological confirmation, or validated rapid PCR","Halal: DNA extraction, then PCR with pork-specific probes and controls"],
+   en2:"Chicken is free of Salmonella, and halal products carry no trace of pork DNA.",r:["ISO 6579-1:2017/Amd 1:2020","ISO 16140 (rapid methods)","Real-time PCR"],l:"Salmonella: not detected in 25 g · Pork DNA: not detected (sensitivity down to 0.0005%)"}},
+ {id:"produce",x:32,y:49.5,
+  ar:{t:"الخضار والفواكه",s:"بقايا المبيدات",j:"من المزارع المحلية والمستوردة عبر الموانئ، إلى سوق العوير، وتُسحب العينة قبل وصولها للمستهلك.",e:["خلاط تجانس","ميزان تحليلي","جهاز طرد مركزي","LC-MS/MS","GC-MS/MS"],
+   st:["١٠ غم عينة متجانسة + ١٠ مل أسيتونيتريل","أملاح السترات المنظِّمة (MgSO₄ وNaCl وسترات) عند pH ‏5–5.5، ثم رجّ وطرد مركزي","تنظيف المستخلص بـ dSPE (مادة PSA)","حقن في LC-MS/MS وGC-MS/MS لكشف مئات المبيدات في تشغيل واحد"],
+   en2:"أن بقايا المبيدات أقل من الحد الأقصى المسموح (MRL).",r:["EN 15662 (QuEChERS)","Codex MRLs"],l:"كل مبيد مقارنةً بحدّه الأقصى (MRL) حسب المنتج"},
+  en:{t:"Vegetables & fruit",s:"Pesticide residues",j:"From local and imported farms via the ports to Al Aweer market; samples are taken before they reach consumers.",e:["Homogeniser","Analytical balance","Centrifuge","LC-MS/MS","GC-MS/MS"],
+   st:["10 g homogenised sample + 10 mL acetonitrile","Citrate-buffered salts (MgSO₄, NaCl, citrate) at pH 5–5.5, shake and centrifuge","Clean-up by dispersive SPE (PSA)","Inject into LC-MS/MS and GC-MS/MS: hundreds of pesticides in one run"],
+   en2:"Pesticide residues are below the maximum residue limits (MRLs).",r:["EN 15662 (QuEChERS)","Codex MRLs"],l:"Each pesticide checked against its MRL for that product"}},
+ {id:"dates",x:43.75,y:49.5,
+  ar:{t:"التمور والمكسرات",s:"الأفلاتوكسين (سموم العفن)",j:"من مزارع النخيل ومخازن التمور والمكسرات المستوردة، حيث تؤثر الحرارة والرطوبة على نمو العفن.",e:["طاحونة مخبرية","أعمدة الألفة المناعية","HPLC بكاشف فلورسنت","مفاعل اشتقاق ضوئي"],
+   st:["طحن العينة","استخلاص بالميثانول والماء","تنقية بعمود الألفة المناعية الذي يلتقط الأفلاتوكسين فقط","فصل بـ HPLC، ثم اشتقاق ضوئي، ثم كشف فلورسنت (≈365/435 نانومتر)","قياس B1 وB2 وG1 وG2"],
+   en2:"أن الأفلاتوكسين، ومنه B1 المسرطن، أقل من الحد المسموح.",r:["ISO 16050","EN ISO 16050"],l:"المكسرات للاستهلاك المباشر (الاتحاد الأوروبي): B1 ‏≤ 2 · المجموع ≤ 4 ميكروغرام/كغم"},
+  en:{t:"Dates & nuts",s:"Aflatoxins (mould toxins)",j:"From palm farms, date stores and imported nuts, where heat and humidity drive mould growth.",e:["Laboratory mill","Immunoaffinity columns","HPLC with fluorescence detector","Photochemical derivatisation"],
+   st:["Grind the sample","Extract with methanol/water","Clean up on an immunoaffinity column that captures only aflatoxins","HPLC separation, photochemical derivatisation, fluorescence detection (≈365/435 nm)","Quantify B1, B2, G1, G2"],
+   en2:"Aflatoxins, including carcinogenic B1, are below the permitted limit.",r:["ISO 16050","EN ISO 16050"],l:"Nuts for direct consumption (EU): B1 ≤ 2 · total ≤ 4 µg/kg"}},
+ {id:"fish",x:54.5,y:49.5,
+  ar:{t:"السمك",s:"المعادن الثقيلة",j:"من سوق السمك في دبي وسفن الصيد والاستيراد، تُسحب العينة وتُحفظ على الثلج.",e:["هضم بالمايكرويف (أوعية مغلقة)","ICP-MS"],
+   st:["تجانس لحم السمك","هضم بحمض النيتريك تحت الضغط في المايكرويف","تخفيف المحلول","قياس الزئبق والرصاص والكادميوم والزرنيخ معاً بـ ICP-MS"],
+   en2:"أن المعادن الثقيلة أقل من الحدود المسموحة.",r:["EN 15763 (ICP-MS)","EN 13805 (الهضم)"],l:"الزئبق (الاتحاد الأوروبي): ٠٫٥ ملغم/كغم لمعظم الأسماك، و١٫٠ للأسماك المفترسة الكبيرة"},
+  en:{t:"Fish",s:"Heavy metals",j:"From Dubai's fish market, fishing vessels and imports; the sample is kept on ice.",e:["Microwave digestion (closed vessels)","ICP-MS"],
+   st:["Homogenise the fish tissue","Pressure digestion with nitric acid in the microwave","Dilute the digest","Measure mercury, lead, cadmium and arsenic together by ICP-MS"],
+   en2:"Heavy metals are below the permitted limits.",r:["EN 15763 (ICP-MS)","EN 13805 (digestion)"],l:"Mercury (EU): 0.5 mg/kg for most fish, 1.0 for large predatory fish"}},
+ {id:"water",x:83,y:57.5,
+  ar:{t:"المياه",s:"بكتيريا E. coli",j:"من المياه الجوفية في المزارع ومياه الشرب، تُسحب في قوارير معقمة.",e:["منظومة ترشيح غشائي","أغشية 0.45 ميكرون","آجار كروموجيني","حاضنة 36 °م"],
+   st:["ترشيح ١٠٠ مل من الماء","وضع الغشاء على الآجار الكروموجيني","تحضين ٢١–٢٤ ساعة","عدّ المستعمرات الكحلية/البنفسجية (E. coli)"],
+   en2:"أن مياه الري والشرب خالية من التلوث البرازي.",r:["ISO 9308-1"],l:"مياه الشرب: صفر E. coli في ١٠٠ مل"},
+  en:{t:"Water",s:"E. coli",j:"From farm groundwater and drinking water, collected in sterile bottles.",e:["Membrane filtration manifold","0.45 µm membranes","Chromogenic agar","Incubator at 36 °C"],
+   st:["Filter 100 mL of water","Place the membrane on chromogenic agar","Incubate 21–24 h","Count dark-blue/violet colonies (E. coli)"],
+   en2:"Irrigation and drinking water are free of faecal contamination.",r:["ISO 9308-1"],l:"Drinking water: zero E. coli per 100 mL"}},
+ {id:"storage",x:96.7,y:46,
+  ar:{t:"",s:"",j:"",e:[],st:[],en2:"",r:[],l:""},
+  en:{t:"Food inspection",s:"Accreditation of food transport and food safety inspection bodies",j:"EIAC accredits the inspection bodies, including Dubai Municipality, that verify the health and safety of food storage conditions: food warehouses, including cold stores, and the vehicles that carry food, from the port to the shop shelf.",e:["Calibrated probe and data-logger thermometers","Refrigerated vehicle temperature records","Warehouse inspection checklists based on the Food Code","Digital inspection reports"],
+   st:["Inspect the refrigerated trucks and containers that carry food","Check the condition of warehouses and storage areas, including cold-store temperatures","Check hygiene, separation of raw and ready-to-eat food, and stock rotation","Verify that the operator applies the Food Code","Record the findings and follow up corrective actions"],
+   en2:"The bodies that inspect food storage are themselves competent and impartial, so their findings can be trusted.",r:["ISO/IEC 17020 Inspection bodies","Food Code"],l:"Chilled food at 5 °C or below · frozen food at −18 °C or below",
+   pp:["Port arrival","Food transport","Warehouse","Accredited inspection","Compliance verified"]}},
+ {id:"trust",x:77.5,y:26.5,
+  ar:{t:"ركن الاعتماد",s:"لماذا نثق بالنتيجة؟",j:"كل نتيجة في هذا المختبر تمر بنظام جودة معتمد قبل أن تصل للجهات الرقابية والمصدّرين.",e:["ميزان معاير بملصق معايرة","ترمومتر مرجعي","مواد مرجعية معتمدة (CRM)","مخطط ضبط الجودة","شهادة اختبار الكفاءة"],
+   st:["المختبر يُقيَّم حسب ISO/IEC 17025","الأجهزة معايرة بالتتبع للوحدات الدولية","الطرق مصدّقة، ونتائج الكفاءة تُقارن مع مختبرات عالمية","الاعتماد عبر اتفاقية Global ACI للاعتراف المتبادل يجعل النتيجة مقبولة دولياً"],
+   en2:"فحص مرة واحدة، يُقبل في كل مكان: ثقة للمستهلك وتسهيل للتجارة.",r:["ISO/IEC 17025","Global ACI MRA"],l:"Global ACI حلّت محل ILAC وIAF منذ ١ يناير ٢٠٢٦"},
+  en:{t:"Trusted data",s:"Smart food systems run on data. Accreditation makes that data trustworthy.",j:"Smart food systems (AI risk prediction, digital traceability, connected cold chains) all depend on lab results. Every result here passes through an accredited quality system before it reaches regulators, traders and exporters.",e:["Laboratory information management system (LIMS)","Automated sample handling (robotics)","Calibrated instruments, traceable to SI units","Certified reference materials and QC control charts","Proficiency-testing participation"],
+   st:["The lab is assessed against ISO/IEC 17025","Instruments are calibrated with traceability to SI units","Methods are validated; proficiency results compared with labs worldwide","Accreditation under the Global ACI mutual recognition arrangement makes results accepted internationally"],
+   en2:"Tested once, accepted everywhere: consumer trust and easier trade.",r:["ISO/IEC 17025","Global ACI MRA"],l:"Global ACI replaced ILAC and IAF on 1 January 2026"}}
+];
+
+let lang="en", vidLang="en";
+const seen=new Set();
+try{(JSON.parse(localStorage.getItem("seen")||"[]")).forEach(i=>seen.add(i))}catch(e){}
+const stage=document.getElementById("stage"), panel=document.getElementById("panel"), sheet=document.getElementById("sheet");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function render(){
+  document.documentElement.lang=lang; document.documentElement.dir=lang==="ar"?"rtl":"ltr";
+  document.querySelectorAll("[data-t]").forEach(el=>el.textContent=UI[lang][el.dataset.t]);
+  stage.querySelectorAll(".hs").forEach(n=>n.remove());
+  HS.forEach((h,i)=>{
+    const b=document.createElement("button");
+    b.className="hs"+(h.video?" big":seen.has(h.id)?" seen":""); b.dataset.x=h.x; b.dataset.y=h.y;
+    b.setAttribute("aria-label",h[lang].t);
+    b.innerHTML=`<span class="holo"><img src="logo-white.svg" alt=""></span>`;
+    b.onclick=h.video?playFilm:()=>openSlide(ORDER.indexOf(h.id)); stage.appendChild(b);
+  });
+  updateCrop();
+}
+// keep every hotspot inside the visible part of the picture
+function updateCrop(){
+  const sw=stage.clientWidth, sh=stage.clientHeight, app=document.getElementById("app");
+  const vl=Math.max(0,(sw-app.clientWidth)/2), vt=Math.max(0,(sh-app.clientHeight)/2);
+  stage.style.setProperty("--vl",vl+"px"); stage.style.setProperty("--vt",vt+"px");
+  const mx=(vl+sw*.045)/sw*100, my=(vt+sh*.06)/sh*100;
+  stage.querySelectorAll(".hs").forEach(b=>{
+    b.style.left=Math.min(100-mx,Math.max(mx,+b.dataset.x))+"%"; b.style.top=Math.min(100-my,Math.max(my,+b.dataset.y))+"%"});
+}
+new ResizeObserver(()=>updateCrop()).observe(document.getElementById("app"));
+function open(h){
+  const c=h[lang], u=UI[lang];
+  let html=`<div class="sheet-head"><div><h2>${esc(c.t)}</h2><p class="sub">${esc(c.s)}</p></div><button class="close" id="x" aria-label="close">✕</button></div>`;
+  if(h.video){
+    html+=`<div class="tabs"><button class="tab" data-v="ar" aria-pressed="${vidLang==="ar"}">العربية</button><button class="tab" data-v="en" aria-pressed="${vidLang==="en"}">English</button></div>
+    <video id="vid" controls playsinline src="hamdan-${vidLang}.mp4"></video><div class="sec"><p>${esc(c.p)}</p></div>`;
+  }else{
+    html+=`<div class="sec"><h3>${u.journey}</h3><p>${esc(c.j)}</p></div>
+    <div class="sec"><h3>${u.equip}</h3><ul>${c.e.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+    <div class="sec"><h3>${u.steps}</h3><ol>${c.st.map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>
+    ${(c.pp||PP[h.id])?`<div class="sec"><h3>Digital sample passport</h3><div class="pp">${(c.pp||PP[h.id]).map((x,i)=>`<span><b>${i+1}</b>${esc(x)}</span>`).join("")}</div><p class="ppv">✓ Verified result from an ISO/IEC 17025 accredited lab</p></div>`:""}
+    <div class="sec"><h3>${u.ensures}</h3><p>${esc(c.en2)}</p></div>
+    <div class="sec"><h3>${u.refs}</h3><div class="ref">${c.r.map(x=>`<span>${esc(x)}</span>`).join("")}</div></div>
+    <div class="sec limit"><h3>${u.limit}</h3><p>${esc(c.l)}</p><small>${u.limitNote}</small></div>`;
+  }
+  html+=`<p class="draft">Presenter notes · limits to be confirmed by an accredited lab specialist</p>`;
+  sheet.innerHTML=html; panel.hidden=false;
+  document.getElementById("x").onclick=close; document.getElementById("x").focus();
+  sheet.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{vidLang=t.dataset.v;open(h);document.getElementById("vid").play().catch(()=>{})});
+  seen.add(h.id); try{localStorage.setItem("seen",JSON.stringify([...seen]))}catch(e){}
+}
+function close(){const v=document.getElementById("vid");if(v)v.pause();panel.hidden=true;if(slideEl.hidden)render()}
+
+// ---------- presenter slides ----------
+const ORDER=["hamdan","storage","chicken","produce","dates","fish","water","trust"];
+const SL={
+ hamdan:{img:"family.jpg",title:"Welcome to the smart food lab",key:"Meet Hamdan, EIAC's digital guide, on the journey of your food from farm to fork.",film:true,
+   chips:["Emirates International Accreditation Centre"]},
+ storage:{img:"slides/storage.jpg",title:"Food inspection",key:"Accrediting inspection bodies who verify the health and safety of food storage conditions.",
+   three:["EIAC accredits the inspection bodies","They carry out food safety inspections","They verify storage conditions and the Food Code"],res:["Competent, accredited inspection ✓","Safe storage conditions verified ✓"],chips:["ISO/IEC 17020","Food Code"]},
+ chicken:{img:"slides/chicken.jpg",title:"Chicken",key:"Free from Salmonella. Verified halal.",
+   three:["Enrich a 25 g sample","Grow on selective plates","Confirm by real-time PCR"],res:["Salmonella: not detected in 25 g ✓","Pork DNA: not detected ✓"],chips:["ISO 6579-1","Real-time PCR","ISO/IEC 17025"]},
+ produce:{img:"slides/produce.jpg",title:"Vegetables & fruit",key:"Hundreds of pesticides, one test.",
+   three:["Extract (QuEChERS)","Clean up the extract","Measure by LC-MS/MS & GC-MS/MS"],res:["Below maximum residue limits ✓"],chips:["EN 15662","Codex MRLs","ISO/IEC 17025"]},
+ dates:{img:"slides/dates.jpg",title:"Dates & nuts",key:"No hidden mould toxins.",
+   three:["Extract the ground sample","Purify on an immunoaffinity column","Detect by HPLC"],res:["Aflatoxins below limit ✓"],chips:["ISO 16050","ISO/IEC 17025"]},
+ fish:{img:"slides/fish.jpg",title:"Fish",key:"Safe from heavy metals.",
+   three:["Digest the sample","Atomise it in plasma","Measure by ICP-MS"],res:["Mercury, lead, cadmium below limits ✓"],chips:["EN 15763","EN 13805","ISO/IEC 17025"]},
+ water:{img:"slides/water.jpg",title:"Water",key:"Clean water from farm to tap.",
+   three:["Filter 100 mL","Grow on chromogenic agar","Count the colonies"],res:["Zero E. coli per 100 mL ✓"],chips:["ISO 9308-1","ISO/IEC 17025"]},
+ trust:{img:"slides/trust.jpg",title:"Trusted data",key:"Smart food systems run on data. Accreditation makes that data trustworthy.",
+   three:["Calibrated","Validated","Proficiency-tested"],res:["Accepted worldwide via Global ACI ✓"],chips:["ISO/IEC 17025","Global ACI MRA"]}
+};
+const slideEl=document.getElementById("slide");
+let cur=-1, touring=false, tourTimer=0;
+const TOUR_MS=20000;
+function openSlide(i){
+  if(filmOn)return;
+  cur=i;
+  if(ORDER[i]==="trust"){ // the data glass replaces the slide for this station
+    clearTimeout(tourTimer); slideEl.hidden=true; panel.hidden=true;
+    Glass.open({tour:touring,idx:i}); return;
+  }
+  const first=slideEl.hidden, h=HS.find(x=>x.id===ORDER[i]);
+  if(first){
+    bg.classList.add("push"); bg.style.transformOrigin=`${h.x}% ${h.y}%`; bg.style.transform="scale(2.2)";
+    stage.classList.add("dim");
+    setTimeout(()=>{bg.classList.remove("push");showSlide()},650);
+  }else showSlide();
+}
+function showSlide(){
+  const id=ORDER[cur], s=SL[id], h=HS.find(x=>x.id===id), pp=h.en.pp||PP[id];
+  seen.add(id); try{localStorage.setItem("seen",JSON.stringify([...seen]))}catch(e){}
+  slideEl.innerHTML=`
+   <header><div class="eyebrow">Station ${cur+1} / ${ORDER.length}</div><h2>${esc(s.title)}</h2><p class="key">${esc(s.key)}</p></header>
+   <div class="body"><div class="media${s.tall?" tall":""}"><img src="${s.img}" alt=""></div>
+    <div class="right">${s.film?`<button class="play" id="sPlay">▶ Play Hamdan's film</button>`:
+     `<ol class="steps3">${s.three.map((x,i)=>`<li><b>${i+1}</b>${esc(x)}</li>`).join("")}</ol>
+      <div class="result">${s.res.map(x=>`<span>${esc(x)}</span>`).join("")}</div>`}
+     <div class="chips">${s.chips.map(x=>`<span>${esc(x)}</span>`).join("")}</div></div></div>
+   ${pp?`<div class="pp">${pp.map((x,i)=>`<span><b>${i+1}</b>${esc(x)}</span>`).join("")}</div>`:"<div></div>"}
+   <nav class="bar"><div class="grp"><button id="sPrev" aria-label="Previous">‹ Prev</button><span class="count">${cur+1} / ${ORDER.length}</span><button id="sNext" aria-label="Next">Next ›</button></div>
+    <div class="grp"><button id="sTour" class="${touring?"on":""}">${touring?"❚❚ Pause tour":"▶ Tour"}</button>${s.film?"":`<button id="sNotes">Notes</button>`}<button id="sClose" aria-label="Back to the lab">✕ Lab</button></div></nav>`;
+  slideEl.hidden=false; slideEl.style.animation="none"; slideEl.offsetHeight; slideEl.style.animation="";
+  document.getElementById("sPrev").onclick=()=>step(-1);
+  document.getElementById("sNext").onclick=()=>step(1);
+  document.getElementById("sClose").onclick=closeSlide;
+  document.getElementById("sTour").onclick=()=>setTour(!touring);
+  const n=document.getElementById("sNotes"); if(n)n.onclick=()=>{setTour(false);open(h)};
+  const p=document.getElementById("sPlay");
+  if(p)p.onclick=()=>{resumeAfterFilm={idx:cur,tour:touring};setTour(false);closeSlide();setTimeout(playFilm,700)};
+  // on the tour, the Hamdan station plays the film by itself, then the tour carries on
+  if(touring&&s.film){clearTimeout(tourTimer);tourTimer=setTimeout(()=>p&&p.click(),2500)}
+  else if(touring){clearTimeout(tourTimer);tourTimer=setTimeout(()=>step(1),TOUR_MS)}
+}
+function step(d){openSlide((cur+d+ORDER.length)%ORDER.length)}
+function unlockFilm(){if(filmOn)return;const p=film.play();if(p)p.then(()=>{if(!filmOn)film.pause()}).catch(()=>{})}
+function setTour(on){if(on)unlockFilm();touring=on;clearTimeout(tourTimer);if(on){if(slideEl.hidden)openSlide(0);else showSlide()}else if(!slideEl.hidden)showSlide()}
+function closeSlide(){
+  setTour(false); slideEl.hidden=true; panel.hidden=true;
+  bg.classList.add("push"); bg.style.transform="scale(1)"; stage.classList.remove("dim");
+  setTimeout(()=>{bg.classList.remove("push");render()},700);
+}
+document.getElementById("tour").onclick=()=>setTour(true);
+document.addEventListener("keydown",e=>{if(slideEl.hidden||!panel.hidden)return;
+  if(e.key==="ArrowRight")step(1);else if(e.key==="ArrowLeft")step(-1);else if(e.key==="Escape")closeSlide()});
+panel.addEventListener("click",e=>{if(e.target===panel)close()});
+const film=document.getElementById("film"), filmx=document.getElementById("filmx");
+const wall=document.getElementById("wall"), bg=stage.querySelector("img.bg");
+// wall-screen corners as fractions of the lab image (measured on the 2688x1520 original): TL, TR, BR, BL
+const QUAD=[[50,80],[358,192],[358,458],[50,448]].map(([x,y])=>[x/2688,y/1520]);
+const ORIGIN=[.076,.19], ZOOM=3.2, DUR=1200, WW=1600, WH=900;
+function homography(src,dst){
+  const A=[],b=[];
+  for(let i=0;i<4;i++){const[x,y]=src[i],[X,Y]=dst[i];
+    A.push([x,y,1,0,0,0,-x*X,-y*X]);b.push(X);A.push([0,0,0,x,y,1,-x*Y,-y*Y]);b.push(Y)}
+  for(let c=0;c<8;c++){let p=c;for(let r=c+1;r<8;r++)if(Math.abs(A[r][c])>Math.abs(A[p][c]))p=r;
+    [A[c],A[p]]=[A[p],A[c]];[b[c],b[p]]=[b[p],b[c]];
+    for(let r=0;r<8;r++){if(r===c)continue;const f=A[r][c]/A[c][c];for(let k=c;k<8;k++)A[r][k]-=f*A[c][k];b[r]-=f*b[c]}}
+  const h=b.map((v,i)=>v/A[i][i]);
+  return`matrix3d(${h[0]},${h[3]},0,${h[6]},${h[1]},${h[4]},0,${h[7]},0,0,1,0,${h[2]},${h[5]},0,1)`;
+}
+let prog=0, anim=0;
+function paint(){
+  const W=stage.clientWidth,H=stage.clientHeight; if(!W)return;
+  const e=prog<.5?4*prog**3:1-(-2*prog+2)**3/2, s=1+(ZOOM-1)*e;
+  const ox=ORIGIN[0]*W, oy=ORIGIN[1]*H;
+  bg.style.transformOrigin=`${ox}px ${oy}px`; bg.style.transform=`scale(${s})`;
+  const full=[[0,0],[W,0],[W,H],[0,H]];
+  const dst=QUAD.map(([fx,fy],i)=>{const x=ox+(fx*W-ox)*s,y=oy+(fy*H-oy)*s;return[x+(full[i][0]-x)*e,y+(full[i][1]-y)*e]});
+  wall.style.transform=homography([[0,0],[WW,0],[WW,WH],[0,WH]],dst);
+  const idle=document.getElementById("tvidle"); if(idle)idle.style.transform=wall.style.transform;
+}
+function animate(to,done){
+  cancelAnimationFrame(anim); const from=prog, t0=performance.now();
+  const step=t=>{prog=Math.min(1,(t-t0)/DUR); prog=from+(to-from)*prog; paint();
+    if(prog!==to)anim=requestAnimationFrame(step); else done&&done()};
+  anim=requestAnimationFrame(step);
+}
+new ResizeObserver(paint).observe(stage); paint();
+let filmOn=false;
+function playFilm(){
+  if(filmOn)return; filmOn=true;
+  // unlock playback with sound inside the tap, then start after the zoom
+  film.currentTime=0; const p=film.play(); if(p)p.then(()=>film.pause()).catch(()=>{});
+  stage.classList.add("zoom");
+  seen.add("hamdan"); try{localStorage.setItem("seen",JSON.stringify([...seen]))}catch(e){}
+  animate(1,()=>{if(!filmOn)return;film.hidden=false;filmx.hidden=false;filmloop.hidden=false;film.currentTime=0;
+    film.play().catch(()=>{if(resumeAfterFilm&&resumeAfterFilm.tour)endFilm();else film.controls=true});filmx.focus()});
+}
+function endFilm(){
+  if(!filmOn)return; filmOn=false;
+  film.pause(); film.hidden=true; filmx.hidden=true; filmloop.hidden=true; setLoop(false); film.controls=false;
+  stage.classList.remove("zoom");
+  const back=resumeAfterFilm; resumeAfterFilm=null;
+  animate(0,()=>{render(); if(back){touring=back.tour; openSlide((back.idx+1)%ORDER.length)}});
+}
+let resumeAfterFilm=null;
+film.addEventListener("ended",endFilm);
+film.addEventListener("click",()=>{filmx.hidden=false});
+filmx.onclick=endFilm;
+// repeat mode: the film plays again and again until the presenter turns it off or closes it
+const filmloop=document.getElementById("filmloop");
+function setLoop(v){film.loop=v;filmloop.textContent=v?"⟳ Repeat: On":"⟳ Repeat: Off";filmloop.classList.toggle("on",v)}
+filmloop.onclick=()=>setLoop(!film.loop);
+document.getElementById("loopBtn").onclick=()=>{setLoop(true);playFilm()};
+document.getElementById("wall").onclick=playFilm;
+const tvIdle=document.getElementById("tvidle");
+tvIdle.onclick=playFilm;
+tvIdle.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();playFilm()}};
+document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(filmOn)endFilm();else if(!panel.hidden){close();e.stopImmediatePropagation()}},true);
+function toast(msg){let t=document.getElementById("toast");if(!t){t=document.createElement("div");t.id="toast";stage.appendChild(t)}t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{t.hidden=true},5000)}
+document.getElementById("fs").onclick=()=>{
+  const d=document, el=d.documentElement;
+  if(d.fullscreenElement||d.webkitFullscreenElement){(d.exitFullscreen||d.webkitExitFullscreen).call(d);return}
+  const req=el.requestFullscreen||el.webkitRequestFullscreen;
+  const no=()=>toast(/iPhone|iPad/.test(navigator.userAgent)?"Full screen: tap Share, then Add to Home Screen, and open it from there":"Full screen is blocked here. Open the link in Chrome or Edge, or press F11");
+  if(!req||d.fullscreenEnabled===false){no();return}
+  setTimeout(()=>{if(!(d.fullscreenElement||d.webkitFullscreenElement))no()},900);
+  try{const p=req.call(el);if(p&&p.then)p.then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock("landscape").catch(()=>{})).catch(()=>{})}catch(e){}
+};
+render();
+</script>
+<script src="glass.js"></script>
+
+<style>
+#offline{position:fixed;left:max(14px,env(safe-area-inset-left,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));z-index:30;
+  font:700 13px "IBM Plex Sans Arabic",system-ui,sans-serif;color:#e9f6ff;background:rgba(7,22,48,.85);border:1px solid rgba(127,227,255,.5);
+  border-radius:999px;padding:7px 14px;transition:opacity .6s}
+#offline.ok{border-color:rgba(63,191,138,.8);color:#bff0d9}
+</style>
+<div id="offline" hidden></div>
+<script>
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  const pill = document.getElementById("offline");
+  const say = (t, ok) => { pill.textContent = t; pill.classList.toggle("ok", !!ok); pill.hidden = false; pill.style.opacity = 1; };
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (err) {}
+  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
+  // a newer version took over: show it straight away
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (hadController && !window.__swReloaded) { window.__swReloaded = true; location.reload(); } });
+  navigator.serviceWorker.addEventListener("message", (e) => {
+    const d = e.data || {};
+    if (d.type === "offline-progress") say("Saving for offline use… " + d.pct + "%  (keep the internet on)");
+    if (d.type === "offline-error") say("Offline saving stopped. Reopen the app with internet to finish.");
+    if (d.type === "offline-status" && d.film) { say("✓ Ready to use offline", true); setTimeout(() => { pill.style.opacity = 0; setTimeout(() => { pill.hidden = true; }, 700); }, 5000); }
+  });
+  navigator.serviceWorker.ready.then((reg) => { say("Checking offline copy…"); (navigator.serviceWorker.controller || reg.active).postMessage({ type: "offline-check" }); });
+}
+</script>
+
+</body>
+</html>
